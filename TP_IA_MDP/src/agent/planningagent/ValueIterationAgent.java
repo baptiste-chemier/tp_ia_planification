@@ -9,6 +9,7 @@ import environnement.Action;
 import environnement.Etat;
 import environnement.MDP;
 import environnement.gridworld.ActionGridworld;
+import java.util.HashMap;
 
 
 /**
@@ -22,6 +23,7 @@ public class ValueIterationAgent extends PlanningValueAgent{
 	 * discount facteur
 	 */
 	protected double gamma;
+        protected Map<Etat, Double> vMap;
 	//*** VOTRE CODE
 
 
@@ -33,10 +35,13 @@ public class ValueIterationAgent extends PlanningValueAgent{
 	 */
 	public ValueIterationAgent(double gamma,MDP mdp) {
 		super(mdp);
-		this.gamma = gamma;
-		//*** VOTRE CODE
-	
-	
+		this.gamma = gamma;	
+                vMap = new HashMap<Etat, Double>();
+                
+                for(int i = 0; i < mdp.getNbEtatsAccessibles(); i++)
+                {
+                    vMap.put(mdp.getEtatsAccessibles().get(i), 0.0);
+                }
 	}
 	
 	
@@ -76,20 +81,30 @@ public class ValueIterationAgent extends PlanningValueAgent{
      */
 	@Override
 	public Action getAction(Etat e) {
-		//*** VOTRE CODE
-		
-	
-		return null;
+            
+            List<Action> listAction = this.getPolitique(e);
+
+            Random rand = new Random();
+            int nombre = rand.nextInt(listAction.size() - 1);
+            
+            if(listAction.size() > 0) {
+                return listAction.get(nombre);
+            }
+            return null;
 	}
+        
 	@Override
 	public double getValeur(Etat _e) {
-		//*** VOTRE CODE
 		
-		return 0.0;
+                return vMap.get(_e);
+		
+		//return 0.0;
 	}
 	/**
 	 * renvoi la (les) action(s) de plus forte(s) valeur(s) dans l'etat e 
 	 * (plusieurs actions sont renvoyees si valeurs identiques, liste vide si aucune action n'est possible)
+         * 
+         * Valeur état = valeur max action
 	 */
 	@Override
 	public List<Action> getPolitique(Etat _e) {
