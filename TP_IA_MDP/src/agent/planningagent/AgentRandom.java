@@ -8,6 +8,7 @@ import environnement.Action;
 import environnement.Etat;
 import environnement.MDP;
 import environnement.gridworld.ActionGridworld;
+import java.util.Random;
 /**
  * Cet agent choisit une action aleatoire parmi toutes les autorisees dans chaque etat
  * @author lmatignon
@@ -22,12 +23,16 @@ public class AgentRandom extends PlanningValueAgent{
 
 	@Override
 	public Action getAction(Etat e) {
-		//*** VOTRE CODE
-		
-		
-		
-		return null;
-		
+            
+            List<Action> listAction = this.getPolitique(e);
+
+            Random rand = new Random();
+            int nombre = rand.nextInt(listAction.size() - 1);
+            
+            if(listAction.size() > 0) {
+                return listAction.get(nombre);
+            }
+            return null;
 	}
 
 	
@@ -37,13 +42,9 @@ public class AgentRandom extends PlanningValueAgent{
 		return 0.0;
 	}
 
-	
-
 	@Override
 	public List<Action> getPolitique(Etat _e) {
-		//*** VOTRE CODE
-		
-		return null;
+            return this.getMdp().getActionsPossibles(_e);
 	}
 
 	@Override
