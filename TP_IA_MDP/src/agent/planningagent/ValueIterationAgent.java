@@ -56,7 +56,7 @@ public class ValueIterationAgent extends PlanningValueAgent {
         //delta est utilise pour detecter la convergence de l'algorithme
         //lorsque l'on planifie jusqu'a convergence, on arrete les iterations lorsque
         //delta < epsilon 
-        this.delta = 0.0;
+        this.delta = -Double.MAX_VALUE;
         
         //TODO VOTRE CODE
         Double maxGlobal = -Double.MAX_VALUE;
@@ -68,18 +68,25 @@ public class ValueIterationAgent extends PlanningValueAgent {
 
         for (Etat etat : mdp.getEtatsAccessibles()) {
             Double tmp;
+            Double epsilon;
             double recompense;
             Double max = -Double.MAX_VALUE;
             for (Action action : mdp.getActionsPossibles(etat)) {
                 try {
                     Map<Etat, Double> mapProbas = mdp.getEtatTransitionProba(etat, action); //retourne la proba pour des états de sortie
                     tmp = 0.0;
+                    epsilon = 0.0;
                     for (Etat etatArrive : mapProbas.keySet()) { //Permet de récupérer les clés de la map précéentes (donc les états)
                         Double proba = mapProbas.get(etatArrive); // Récupération de la probabilités depuis la map
                         recompense = mdp.getRecompense(etat, action, etatArrive); // Récupération de la récompense
                         Double oldValue = olderValues.get(etatArrive);//Récupération de l'ancienne valeur de V
                         Double current = currentValue.get(etatArrive); //
                         tmp += proba * (recompense + this.gamma * oldValue);
+                        System.out.println("Tmp : " + tmp);
+                        epsilon = Math.abs(oldValue - current);
+                    }
+                    if (epsilon > delta) {
+                        delta = epsilon;
                     }
                     if (tmp > max) {
                         max = tmp;
