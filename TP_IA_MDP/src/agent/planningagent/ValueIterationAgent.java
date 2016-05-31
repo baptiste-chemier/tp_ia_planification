@@ -22,8 +22,8 @@ public class ValueIterationAgent extends PlanningValueAgent {
      * discount facteur
      */
     private Double gamma;
-    private Map<Etat, Double> previousIterationValues;
-    private Map<Etat, Double> iterationValue;
+    private Map<Etat, Double> olderValues;
+    private Map<Etat, Double> currentValue;
 
     /**
      * @param gamma
@@ -34,12 +34,12 @@ public class ValueIterationAgent extends PlanningValueAgent {
         
         //*** TODO CODE
         this.gamma = gamma;
-        previousIterationValues = new HashMap<Etat, Double>();
-        iterationValue = new HashMap<Etat, Double>();
+        olderValues = new HashMap<Etat, Double>();
+        currentValue = new HashMap<Etat, Double>();
 
         for (Etat etat : mdp.getEtatsAccessibles()) {
-            previousIterationValues.put(etat, 0.0);
-            iterationValue.put(etat, 0.0);
+            olderValues.put(etat, 0.0);
+            currentValue.put(etat, 0.0);
         }
     }
 
@@ -52,35 +52,34 @@ public class ValueIterationAgent extends PlanningValueAgent {
      */
     @Override
     public void updateV() {
-        this.delta = -Double.MAX_VALUE;
+        
+        //delta est utilise pour detecter la convergence de l'algorithme
+        //lorsque l'on planifie jusqu'a convergence, on arrete les iterations lorsque
+        //delta < epsilon 
+        this.delta = 0.0;
         
         //TODO VOTRE CODE
         Double maxGlobal = -Double.MAX_VALUE;
         Double min = Double.MAX_VALUE;
 
-        for (Etat e : iterationValue.keySet()) {
-            previousIterationValues.put(e, iterationValue.get(e));
+        for (Etat e : currentValue.keySet()) {
+            olderValues.put(e, currentValue.get(e));
         }
 
         for (Etat etat : mdp.getEtatsAccessibles()) {
             Double tmp;
-            Double tmpDelta;
+            double recompense;
             Double max = -Double.MAX_VALUE;
             for (Action action : mdp.getActionsPossibles(etat)) {
                 try {
-                    Map<Etat, Double> probas = mdp.getEtatTransitionProba(etat, action);
+                    Map<Etat, Double> mapProbas = mdp.getEtatTransitionProba(etat, action); //retourne la proba pour des états de sortie
                     tmp = 0.0;
-                    tmpDelta = 0.0;
-                    for (Etat etatProba : probas.keySet()) {
-                        Double proba = probas.get(etatProba);
-                        double recompense = mdp.getRecompense(etat, action, etatProba);
-                        Double previous = previousIterationValues.get(etatProba);
-                        Double current = iterationValue.get(etatProba);
-                        tmp += proba * (recompense + this.gamma * previous);
-                        tmpDelta = Math.abs(previous - current);
-                    }
-                    if (tmpDelta > delta) {
-                        delta = tmpDelta;
+                    for (Etat etatArrive : mapProbas.keySet()) { //Permet de récupérer les clés de la map précéentes (donc les états)
+                        Double proba = mapProbas.get(etatArrive); // Récupération de la probabilités depuis la map
+                        recompense = mdp.getRecompense(etat, action, etatArrive); // Récupération de la récompense
+                        Double oldValue = olderValues.get(etatArrive);//Récupération de l'ancienne valeur de V
+                        Double current = currentValue.get(etatArrive); //
+                        tmp += proba * (recompense + this.gamma * oldValue);
                     }
                     if (tmp > max) {
                         max = tmp;
@@ -95,13 +94,12 @@ public class ValueIterationAgent extends PlanningValueAgent {
                     e.printStackTrace();
                 }
             }
-            iterationValue.put(etat, max);
+            currentValue.put(etat, max);
         }
         vmax = maxGlobal;
         vmin = min;
 
-        // mise a jour vmax et vmin pour affichage
-        // ...
+
         //******************* a laisser a la fin de la methode
         this.notifyObs();
     }
@@ -123,10 +121,10 @@ public class ValueIterationAgent extends PlanningValueAgent {
     @Override
     public double getValeur(Etat _e) {
         //TODO CODE
-        if (iterationValue.get(_e) == null) {
+        if (currentValue.get(_e) == null) {
             return 0.0;
         }
-        return iterationValue.get(_e);
+        return currentValue.get(_e);
     }
 
     /**
@@ -148,7 +146,7 @@ public class ValueIterationAgent extends PlanningValueAgent {
                 tmp = 0.0;
                 Map<Etat, Double> probas = mdp.getEtatTransitionProba(_e, action);
                 for (Etat etatProba : probas.keySet()) {
-                    tmp += probas.get(etatProba) * (mdp.getRecompense(_e, action, etatProba) + this.gamma * previousIterationValues.get(etatProba));
+                    tmp += probas.get(etatProba) * (mdp.getRecompense(_e, action, etatProba) + this.gamma * olderValues.get(etatProba));
                 }
                 if (tmp > max) {
                     max = tmp;
@@ -170,12 +168,12 @@ public class ValueIterationAgent extends PlanningValueAgent {
     public void reset() {
         super.reset();
         //TODO CODE
-        previousIterationValues.clear();
-        iterationValue.clear();
+        olderValues.clear();
+        currentValue.clear();
 
         for (Etat etat : mdp.getEtatsAccessibles()) {
-            previousIterationValues.put(etat, 0.0);
-            iterationValue.put(etat, 0.0);
+            olderValues.put(etat, 0.0);
+            currentValue.put(etat, 0.0);
         }
 
         /*-----------------*/
